@@ -7,14 +7,6 @@ public class Store {
     private String name;
     private List<Product> products;
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
-
     public Store(String name) {
         this.name = name;
         this.products = new ArrayList<>();
@@ -37,7 +29,6 @@ public class Store {
     }
 
     public void editProduct(Product product) {
-        // Logic for editing a product in the store
         System.out.println("Product " + product.getName() + " in store " + name + " has been edited.");
     }
 }

@@ -7,18 +7,6 @@ public class Admin {
     private String username;
     private String password;
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public Admin(String username, String password) {
         this.username = username;
         this.password = password;
@@ -33,10 +21,9 @@ public class Admin {
     }
 
     public void viewProducts(List<Product> products) {
-        for (Product product : products) {
-            System.out.println(product.getName() + " - " + product.getPrice() + " - " + product.getQuantity());
-        }
+        products.forEach(product -> System.out.println(product.getName() + " - " + product.getPrice() + " - " + product.getQuantity()));
     }
+
     public boolean checkCredentials(String enteredUsername, String enteredPassword) {
         return username.equals(enteredUsername) && password.equals(enteredPassword);
     }
@@ -46,8 +33,7 @@ public class Admin {
         String newStoreName = scanner.nextLine();
 
         if (newStoreName != null && !newStoreName.trim().isEmpty()) {
-            Store newStore = new Store(newStoreName);
-            stores.add(newStore);
+            stores.add(new Store(newStoreName));
             System.out.println("Store '" + newStoreName + "' created successfully.");
         } else {
             System.out.println("Invalid store name. Please provide a non-empty name.");

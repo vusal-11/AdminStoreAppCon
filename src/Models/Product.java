@@ -7,19 +7,6 @@ public class Product {
     private double price;
     private int quantity;
 
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
     public Product(String name, double price, int quantity) {
         this.name = name;
         this.price = price;
@@ -51,9 +38,7 @@ public class Product {
     }
 
     public void viewProducts(List<Product> products) {
-        for (Product product : products) {
-            System.out.println(product);
-        }
+        products.forEach(System.out::println);
     }
 
     @Override

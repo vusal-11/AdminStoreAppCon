@@ -1,5 +1,6 @@
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import Models.Admin;
 import Models.Product;
@@ -25,33 +26,15 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    System.out.print("Enter username for admin: ");
-                    String adminUsername = scanner.nextLine();
-
-                    System.out.print("Enter password for admin: ");
-                    String adminPassword = scanner.nextLine();
-
-                    loginService.registerAdmin(adminUsername, adminPassword);
+                    registerAdmin(scanner, loginService);
                     break;
 
                 case 2:
-                    System.out.print("Enter username for user: ");
-                    String userUsername = scanner.nextLine();
-
-                    System.out.print("Enter password for user: ");
-                    String userPassword = scanner.nextLine();
-
-                    loginService.registerUser(userUsername, userPassword);
+                    registerUser(scanner, loginService);
                     break;
 
                 case 3:
-                    System.out.print("Enter username: ");
-                    String username = scanner.nextLine();
-
-                    System.out.print("Enter password: ");
-                    String password = scanner.nextLine();
-
-                    loggedInUser = loginService.login(username, password);
+                    loggedInUser = login(scanner, loginService);
 
                     if (loggedInUser instanceof Admin) {
                         performAdminOperations((Admin) loggedInUser, stores, scanner);
@@ -75,6 +58,36 @@ public class Main {
                 performUserOperations((User) loggedInUser, stores, scanner);
             }
         }
+    }
+
+    private static void registerAdmin(Scanner scanner, LoginService loginService) {
+        System.out.print("Enter username for admin: ");
+        String adminUsername = scanner.nextLine();
+
+        System.out.print("Enter password for admin: ");
+        String adminPassword = scanner.nextLine();
+
+        loginService.registerAdmin(adminUsername, adminPassword);
+    }
+
+    private static void registerUser(Scanner scanner, LoginService loginService) {
+        System.out.print("Enter username for user: ");
+        String userUsername = scanner.nextLine();
+
+        System.out.print("Enter password for user: ");
+        String userPassword = scanner.nextLine();
+
+        loginService.registerUser(userUsername, userPassword);
+    }
+
+    private static Object login(Scanner scanner, LoginService loginService) {
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        return loginService.login(username, password);
     }
 
     private static void performAdminOperations(Admin admin, List<Store> stores, Scanner scanner) {
@@ -108,7 +121,7 @@ public class Main {
                     break;
 
                 case 5:
-                    admin.createNewStore(stores, scanner);
+                    createNewStore(stores, scanner);
                     break;
 
                 case 6:
@@ -123,42 +136,124 @@ public class Main {
     }
 
 
-    public static void createNewStore(List<Store> stores, Scanner scanner) {
+
+    private static void showProductsInStores(List<Store> stores) {
+        stores.forEach(store -> {
+            System.out.println("Products in " + store.getName() + ":");
+            store.getProducts().forEach(System.out::println);
+        });
+    }
+
+    private static void increaseOrDecreaseProductQuantity(Scanner scanner, List<Store> stores, boolean increase) {
+        showProductsInStores(stores);
+
+        System.out.print("Enter the name of the product: ");
+        String productName = scanner.nextLine();
+
+        System.out.print("Enter the store name: ");
+        String storeName = scanner.nextLine();
+
+        stores.stream()
+                .filter(store -> store.getName().equals(storeName))
+                .findFirst()
+                .ifPresentOrElse(
+                        store -> {
+                            Product selectedProduct = store.getProducts().stream()
+                                    .filter(product -> product.getName().equals(productName))
+                                    .findFirst()
+                                    .orElse(null);
+
+                            if (selectedProduct != null) {
+                                if (increase) {
+                                    increaseProductQuantity(scanner, selectedProduct);
+                                } else {
+                                    decreaseProductQuantity(scanner, selectedProduct);
+                                }
+                            } else {
+                                System.out.println("Product not found in the specified store.");
+                            }
+                        },
+                        () -> System.out.println("Store not found.")
+                );
+
+        scanner.nextLine();
+    }
+
+    private static void createNewStore(List<Store> stores, Scanner scanner) {
         System.out.print("Enter the name of the new store: ");
         String newStoreName = scanner.nextLine();
 
-        Store newStore = new Store(newStoreName);
-        stores.add(newStore);
-        System.out.println("Store '" + newStoreName + "' created successfully.");
-    }
-    private static void showProductsInStores(List<Store> stores) {
-        for (Store store : stores) {
-            List<Product> products = store.getProducts();
-            System.out.println("Products in " + store.getName() + ":");
-
-            if (!products.isEmpty()) {
-                products.forEach(System.out::println);
-            } else {
-                System.out.println("No products in " + store.getName() + ".");
-            }
+        if (newStoreName != null && !newStoreName.trim().isEmpty()) {
+            Store newStore = new Store(newStoreName);
+            stores.add(newStore);
+            System.out.println("Store '" + newStoreName + "' created successfully.");
+        } else {
+            System.out.println("Invalid store name. Please provide a non-empty name.");
         }
     }
 
-
-    private static void addNewProduct(Scanner scanner, Admin admin, Store store) {
-        System.out.print("Enter the name of the new product: ");
-        String newProductName = scanner.nextLine();
-
-        System.out.print("Enter the price of the new product: ");
-        double newProductPrice = scanner.nextDouble();
-
-        System.out.print("Enter the quantity of the new product: ");
-        int newProductQuantity = scanner.nextInt();
-        scanner.nextLine();
-
-        Product newProduct = new Product(newProductName, newProductPrice, newProductQuantity);
-        admin.addProductToStore(newProduct, store);
+    private static void increaseProductQuantity(Scanner scanner, Product selectedProduct) {
+        System.out.print("Enter the quantity to increase: ");
+        int increaseAmount = scanner.nextInt();
+        selectedProduct.increaseQuantity(increaseAmount);
     }
+
+    private static void decreaseProductQuantity(Scanner scanner, Product selectedProduct) {
+        if (selectedProduct != null) {
+            if (selectedProduct.getQuantity() > 0) {
+                System.out.print("Enter the quantity to decrease: ");
+                int decreaseAmount = scanner.nextInt();
+
+                if (decreaseAmount > 0 && selectedProduct.getQuantity() >= decreaseAmount) {
+                    selectedProduct.decreaseQuantity(decreaseAmount);
+                    System.out.println("Quantity decreased successfully.");
+                } else {
+                    System.out.println("Invalid quantity or not enough stock.");
+                }
+            } else {
+                System.out.println("No products available for decrease.");
+            }
+        } else {
+            System.out.println("Product not found.");
+        }
+    }
+
+    private static void addNewProduct(Scanner scanner, Admin admin, List<Store> stores) {
+        showStores(stores);
+
+        System.out.print("Enter the name of the store to add a new product: ");
+        String storeName = scanner.nextLine();
+
+        stores.stream()
+                .filter(store -> store.getName().equals(storeName))
+                .findFirst()
+                .ifPresentOrElse(
+                        store -> {
+                            System.out.print("Enter the name of the new product: ");
+                            String newProductName = scanner.nextLine();
+
+                            System.out.print("Enter the price of the new product: ");
+                            double newProductPrice = scanner.nextDouble();
+
+                            System.out.print("Enter the quantity of the new product: ");
+                            int newProductQuantity = scanner.nextInt();
+                            scanner.nextLine();
+
+                            Product newProduct = new Product(newProductName, newProductPrice, newProductQuantity);
+                            admin.addProductToStore(newProduct, store);
+                        },
+                        () -> System.out.println("Store not found.")
+                );
+    }
+
+    private static void showStores(List<Store> stores) {
+        System.out.println("Available Stores:");
+        stores.forEach(store-> {
+            System.out.println(store.getName());
+        });
+    }
+
+
     private static void performUserOperations(User user, List<Store> stores, Scanner scanner) {
         while (true) {
             System.out.println("\nUser, choose an action:");
@@ -193,110 +288,6 @@ public class Main {
         }
     }
 
-    private static void increaseOrDecreaseProductQuantity(Scanner scanner, List<Store> stores, boolean increase) {
-        showProductsInStores(stores);
-
-        System.out.print("Enter the name of the product: ");
-        String productName = scanner.nextLine();
-
-        System.out.print("Enter the store name: ");
-        String storeName = scanner.nextLine();
-
-        Store selectedStore = findStoreByName(stores, storeName);
-
-        if (selectedStore != null) {
-            Product selectedProduct = findProductByName(selectedStore, productName);
-            if (selectedProduct != null) {
-                if (increase) {
-                    increaseProductQuantity(scanner, selectedProduct);
-                } else {
-                    decreaseProductQuantity(scanner, selectedProduct);
-                }
-            } else {
-                System.out.println("Product not found in the specified store.");
-            }
-        } else {
-            System.out.println("Store not found.");
-        }
-
-        scanner.nextLine();
-    }
-
-
-    private static void increaseProductQuantity(Scanner scanner, Product selectedProduct) {
-        System.out.print("Enter the quantity to increase: ");
-        int increaseAmount = scanner.nextInt();
-        selectedProduct.increaseQuantity(increaseAmount);
-    }
-
-    private static void decreaseProductQuantity(Scanner scanner, Product selectedProduct) {
-        if (selectedProduct != null) {
-            if (selectedProduct.getQuantity() > 0) {
-                System.out.print("Enter the quantity to decrease: ");
-                int decreaseAmount = scanner.nextInt();
-
-                if (decreaseAmount > 0 && selectedProduct.getQuantity() >= decreaseAmount) {
-                    selectedProduct.decreaseQuantity(decreaseAmount);
-                    System.out.println("Quantity decreased successfully.");
-                } else {
-                    System.out.println("Invalid quantity or not enough stock.");
-                }
-            } else {
-                System.out.println("No products available for decrease.");
-            }
-        } else {
-            System.out.println("Product not found.");
-        }
-    }
-
-
-    private static void addNewProduct(Scanner scanner, Admin admin, List<Store> stores) {
-        showStores(stores);
-
-        System.out.print("Enter the name of the store to add a new product: ");
-        String storeName = scanner.nextLine();
-
-        Store selectedStore = findStoreByName(stores, storeName);
-
-        if (selectedStore != null) {
-            System.out.print("Enter the name of the new product: ");
-            String newProductName = scanner.nextLine();
-
-            System.out.print("Enter the price of the new product: ");
-            double newProductPrice = scanner.nextDouble();
-
-            System.out.print("Enter the quantity of the new product: ");
-            int newProductQuantity = scanner.nextInt();
-            scanner.nextLine();
-
-            Product newProduct = new Product(newProductName, newProductPrice, newProductQuantity);
-            admin.addProductToStore(newProduct, selectedStore);
-        } else {
-            System.out.println("Store not found.");
-        }
-    }
-
-    private static void showStores(List<Store> stores) {
-        System.out.println("Available Stores:");
-        for (Store store : stores) {
-            System.out.println(store.getName());
-        }
-    }
-
-    private static Store findStoreByName(List<Store> stores, String storeName) {
-        return stores.stream()
-                .filter(store -> store.getName().equals(storeName))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private static Product findProductByName(Store store, String productName) {
-        return store.getProducts().stream()
-                .filter(product -> product.getName().equals(productName))
-                .findFirst()
-                .orElse(null);
-    }
-
     private static void buyProduct(User user, List<Store> stores, Scanner scanner) {
         showProductsInStores(stores);
 
@@ -306,26 +297,25 @@ public class Main {
         System.out.print("Enter the store name: ");
         String storeName = scanner.nextLine();
 
-        Store selectedStore = findStoreByName(stores, storeName);
+        stores.stream()
+                .filter(store -> store.getName().equals(storeName))
+                .findFirst()
+                .ifPresentOrElse(
+                        store -> {
+                            Product selectedProduct = store.getProducts().stream()
+                                    .filter(product -> product.getName().equals(productName))
+                                    .findFirst()
+                                    .orElse(null);
 
-        if (selectedStore != null) {
-            Product selectedProduct = findProductByName(selectedStore, productName);
-            if (selectedProduct != null) {
-                System.out.print("Enter the quantity to purchase: ");
-                int quantity = scanner.nextInt();
-                user.buyProduct(selectedProduct, quantity);
-            } else {
-                System.out.println("Product not found in the specified store.");
-            }
-        } else {
-            System.out.println("Store not found.");
-        }
-
+                            if (selectedProduct != null) {
+                                System.out.print("Enter the quantity to purchase: ");
+                                int quantity = scanner.nextInt();
+                                user.buyProduct(selectedProduct, quantity);
+                            } else {
+                                System.out.println("Product not found in the specified store.");
+                            }
+                        },
+                        () -> System.out.println("Store not found.")
+                );
     }
-
-
-
-
-
-
 }
